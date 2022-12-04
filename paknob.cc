@@ -550,7 +550,7 @@ int main(const int argc, char **const argv) {
   auto args = Args(argc, argv);
   auto sc = Subcommand::Build(absl::MakeSpan(args).subspan(1));
   if (!sc) {
-    fputs(Subcommand::Usage(args.empty() ? "patool" : args.front()).c_str(),
+    fputs(Subcommand::Usage(args.empty() ? "paknob" : args.front()).c_str(),
           stderr);
     return EXIT_FAILURE;
   }
