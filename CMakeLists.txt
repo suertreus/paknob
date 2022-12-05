@@ -9,6 +9,6 @@ find_package(PulseAudio REQUIRED)
 
 add_executable(paknob paknob.cc)
 
-target_link_libraries(paknob ${PULSEAUDIO_LIBRARY} absl::any_invocable absl::str_format absl::strings absl::span)
+target_link_libraries(paknob PRIVATE ${PULSEAUDIO_LIBRARY} absl::any_invocable absl::str_format absl::strings absl::span)
 
 install(TARGETS paknob)
