@@ -4,12 +4,12 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <functional>
 #include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
 
-#include "absl/functional/any_invocable.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -25,7 +25,7 @@
 
 namespace {
 using UniqueMainloop =
-    std::unique_ptr<pa_mainloop, absl::AnyInvocable<void(pa_mainloop *)>>;
+    std::unique_ptr<pa_mainloop, std::function<void(pa_mainloop *)>>;
 UniqueMainloop NewUniqueMainloop() {
   return UniqueMainloop(pa_mainloop_new(), [](pa_mainloop *const m) {
     if (!m) return;
@@ -34,7 +34,7 @@ UniqueMainloop NewUniqueMainloop() {
   });
 }
 using UniqueContext =
-    std::unique_ptr<pa_context, absl::AnyInvocable<void(pa_context *)>>;
+    std::unique_ptr<pa_context, std::function<void(pa_context *)>>;
 UniqueContext NewUniqueContext(pa_mainloop_api *const api,
                                const char *const name) {
   return UniqueContext(pa_context_new(api, name), [](pa_context *const ctx) {
@@ -42,7 +42,7 @@ UniqueContext NewUniqueContext(pa_mainloop_api *const api,
   });
 }
 using UniqueOperation =
-    std::unique_ptr<pa_operation, absl::AnyInvocable<void(pa_operation *)>>;
+    std::unique_ptr<pa_operation, std::function<void(pa_operation *)>>;
 UniqueOperation WrapUniqueOperation(pa_operation *const op) {
   return UniqueOperation(op, [](pa_operation *const op) {
     if (op) pa_operation_unref(op);

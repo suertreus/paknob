@@ -1,4 +1,4 @@
-DEPS="libpulse absl_any_invocable absl_str_format absl_strings absl_span"
+DEPS="libpulse absl_str_format absl_strings absl_span"
 
 all: paknob
 
