@@ -20,4 +20,7 @@ clean:
 install: paknob
 	install -D $< --target-directory="$(DESTDIR)/usr/bin"
 
-.PHONY: clean all format iwyu install
+homedir-install: paknob
+	install -D $< --target-directory="$(HOME)/bin"
+
+.PHONY: clean all format iwyu install homedir-install
