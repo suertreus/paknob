@@ -6,13 +6,13 @@
 #include <cstring>
 #include <memory>
 #include <string>
-#include <string_view>
 #include <vector>
 
 #include "absl/functional/any_invocable.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "pulse/context.h"
 #include "pulse/def.h"
@@ -75,9 +75,9 @@ struct SourceTraits {
 class Subcommand {
  public:
   static std::unique_ptr<Subcommand> Build(
-      const absl::Span<const std::string_view> args);
+      const absl::Span<const absl::string_view> args);
   virtual ~Subcommand() = default;
-  static std::string Usage(std::string_view argv0);
+  static std::string Usage(absl::string_view argv0);
   virtual void Run(pa_context *) = 0;
   void quit(int ret) { api_->quit(api_, ret); }
   [[nodiscard]] pa_mainloop_api *api() const { return api_; }
@@ -88,8 +88,8 @@ class Subcommand {
 
  protected:
   Subcommand() : api_{nullptr} {}
-  static bool IsValid(std::string_view name,
-                      absl::Span<const std::string_view> &args) {
+  static bool IsValid(absl::string_view name,
+                      absl::Span<const absl::string_view> &args) {
     if (args.empty()) return false;
     if (args.front() != name) return false;
     args.remove_prefix(1);
@@ -114,12 +114,12 @@ class Subcommand {
 template <typename T, typename Traits>
 class GetVolumeSubcommand : public Subcommand, private Caster<T> {
  public:
-  static std::unique_ptr<T> Build(absl::Span<const std::string_view> args) {
+  static std::unique_ptr<T> Build(absl::Span<const absl::string_view> args) {
     if (!IsValid(T::kName, args)) return {};
     if (!args.empty()) return {};
     return std::unique_ptr<T>(new T());
   }
-  static std::string Usage(std::string_view argv0) {
+  static std::string Usage(absl::string_view argv0) {
     return absl::StrCat(argv0, " ", T::kName);
   }
   void Run(pa_context *const ctx) final {
@@ -144,20 +144,20 @@ class GetVolumeSubcommand : public Subcommand, private Caster<T> {
 class GetSinkVolumeSubcommand final
     : public GetVolumeSubcommand<GetSinkVolumeSubcommand, SinkTraits> {
  public:
-  static inline constexpr std::string_view kName = "get-sink-volume";
+  static inline constexpr absl::string_view kName = "get-sink-volume";
   using GetVolumeSubcommand::GetVolumeSubcommand;
 };
 class GetSourceVolumeSubcommand final
     : public GetVolumeSubcommand<GetSourceVolumeSubcommand, SourceTraits> {
  public:
-  static inline constexpr std::string_view kName = "get-source-volume";
+  static inline constexpr absl::string_view kName = "get-source-volume";
   using GetVolumeSubcommand::GetVolumeSubcommand;
 };
 
 template <typename T, typename Traits>
 class SetVolumeSubcommand : public Subcommand, private Caster<T> {
  public:
-  static std::unique_ptr<T> Build(absl::Span<const std::string_view> args) {
+  static std::unique_ptr<T> Build(absl::Span<const absl::string_view> args) {
     if (!IsValid(T::kName, args)) return {};
     if (args.size() != 1) return {};
     pa_volume_t vol;
@@ -166,7 +166,7 @@ class SetVolumeSubcommand : public Subcommand, private Caster<T> {
     if (!PA_VOLUME_IS_VALID(vol)) return {};
     return std::unique_ptr<T>(new T(vol));
   }
-  static std::string Usage(std::string_view argv0) {
+  static std::string Usage(absl::string_view argv0) {
     return absl::StrCat(argv0, " ", T::kName, " <percentage>");
   }
   void Run(pa_context *const ctx) final {
@@ -202,20 +202,20 @@ class SetVolumeSubcommand : public Subcommand, private Caster<T> {
 class SetSinkVolumeSubcommand final
     : public SetVolumeSubcommand<SetSinkVolumeSubcommand, SinkTraits> {
  public:
-  static inline constexpr std::string_view kName = "set-sink-volume";
+  static inline constexpr absl::string_view kName = "set-sink-volume";
   using SetVolumeSubcommand::SetVolumeSubcommand;
 };
 class SetSourceVolumeSubcommand final
     : public SetVolumeSubcommand<SetSourceVolumeSubcommand, SourceTraits> {
  public:
-  static inline constexpr std::string_view kName = "set-source-volume";
+  static inline constexpr absl::string_view kName = "set-source-volume";
   using SetVolumeSubcommand::SetVolumeSubcommand;
 };
 
 template <typename T, typename Traits, bool dec = false>
 class AdjustVolumeSubcommand : public Subcommand, private Caster<T> {
  public:
-  static std::unique_ptr<T> Build(absl::Span<const std::string_view> args) {
+  static std::unique_ptr<T> Build(absl::Span<const absl::string_view> args) {
     if (!IsValid(T::kName, args)) return {};
     if (args.size() != 1) return {};
     auto arg = args.front();
@@ -228,7 +228,7 @@ class AdjustVolumeSubcommand : public Subcommand, private Caster<T> {
     if (!PA_VOLUME_IS_VALID(vol)) return {};
     return std::unique_ptr<T>(new T(neg, vol));
   }
-  static std::string Usage(std::string_view argv0) {
+  static std::string Usage(absl::string_view argv0) {
     return absl::StrCat(argv0, " ", T::kName, " <percentage>");
   }
   void Run(pa_context *const ctx) final {
@@ -273,40 +273,40 @@ class AdjustVolumeSubcommand : public Subcommand, private Caster<T> {
 class IncrementSinkVolumeSubcommand final
     : public AdjustVolumeSubcommand<IncrementSinkVolumeSubcommand, SinkTraits> {
  public:
-  static inline constexpr std::string_view kName = "increment-sink-volume";
+  static inline constexpr absl::string_view kName = "increment-sink-volume";
   using AdjustVolumeSubcommand::AdjustVolumeSubcommand;
 };
 class DecrementSinkVolumeSubcommand final
     : public AdjustVolumeSubcommand<DecrementSinkVolumeSubcommand, SinkTraits,
                                     true> {
  public:
-  static inline constexpr std::string_view kName = "decrement-sink-volume";
+  static inline constexpr absl::string_view kName = "decrement-sink-volume";
   using AdjustVolumeSubcommand::AdjustVolumeSubcommand;
 };
 class IncrementSourceVolumeSubcommand final
     : public AdjustVolumeSubcommand<IncrementSourceVolumeSubcommand,
                                     SourceTraits> {
  public:
-  static inline constexpr std::string_view kName = "increment-source-volume";
+  static inline constexpr absl::string_view kName = "increment-source-volume";
   using AdjustVolumeSubcommand::AdjustVolumeSubcommand;
 };
 class DecrementSourceVolumeSubcommand final
     : public AdjustVolumeSubcommand<DecrementSourceVolumeSubcommand,
                                     SourceTraits, true> {
  public:
-  static inline constexpr std::string_view kName = "decrement-source-volume";
+  static inline constexpr absl::string_view kName = "decrement-source-volume";
   using AdjustVolumeSubcommand::AdjustVolumeSubcommand;
 };
 
 template <typename T, typename Traits>
 class GetMuteSubcommand : public Subcommand, private Caster<T> {
  public:
-  static std::unique_ptr<T> Build(absl::Span<const std::string_view> args) {
+  static std::unique_ptr<T> Build(absl::Span<const absl::string_view> args) {
     if (!IsValid(T::kName, args)) return {};
     if (!args.empty()) return {};
     return std::unique_ptr<T>(new T());
   }
-  static std::string Usage(std::string_view argv0) {
+  static std::string Usage(absl::string_view argv0) {
     return absl::StrCat(argv0, " ", T::kName);
   }
   void Run(pa_context *const ctx) final {
@@ -331,27 +331,27 @@ class GetMuteSubcommand : public Subcommand, private Caster<T> {
 class GetSinkMuteSubcommand final
     : public GetMuteSubcommand<GetSinkMuteSubcommand, SinkTraits> {
  public:
-  static inline constexpr std::string_view kName = "get-sink-mute";
+  static inline constexpr absl::string_view kName = "get-sink-mute";
   using GetMuteSubcommand::GetMuteSubcommand;
 };
 class GetSourceMuteSubcommand final
     : public GetMuteSubcommand<GetSourceMuteSubcommand, SourceTraits> {
  public:
-  static inline constexpr std::string_view kName = "get-source-mute";
+  static inline constexpr absl::string_view kName = "get-source-mute";
   using GetMuteSubcommand::GetMuteSubcommand;
 };
 
 template <typename T, typename Traits>
 class SetMuteSubcommand : public Subcommand, private Caster<T> {
  public:
-  static std::unique_ptr<T> Build(absl::Span<const std::string_view> args) {
+  static std::unique_ptr<T> Build(absl::Span<const absl::string_view> args) {
     if (!IsValid(T::kName, args)) return {};
     if (args.size() != 1) return {};
     bool mute;
     if (!absl::SimpleAtob(args.front(), &mute)) return {};
     return std::unique_ptr<T>(new T(mute));
   }
-  static std::string Usage(std::string_view argv0) {
+  static std::string Usage(absl::string_view argv0) {
     return absl::StrCat(argv0, " ", T::kName, " <0|1>");
   }
   void Run(pa_context *const ctx) final {
@@ -387,25 +387,25 @@ class SetMuteSubcommand : public Subcommand, private Caster<T> {
 class SetSinkMuteSubcommand final
     : public SetMuteSubcommand<SetSinkMuteSubcommand, SinkTraits> {
  public:
-  static inline constexpr std::string_view kName = "set-sink-mute";
+  static inline constexpr absl::string_view kName = "set-sink-mute";
   using SetMuteSubcommand::SetMuteSubcommand;
 };
 class SetSourceMuteSubcommand final
     : public SetMuteSubcommand<SetSourceMuteSubcommand, SourceTraits> {
  public:
-  static inline constexpr std::string_view kName = "set-source-mute";
+  static inline constexpr absl::string_view kName = "set-source-mute";
   using SetMuteSubcommand::SetMuteSubcommand;
 };
 
 template <typename T, typename Traits>
 class ToggleMuteSubcommand : public Subcommand, private Caster<T> {
  public:
-  static std::unique_ptr<T> Build(absl::Span<const std::string_view> args) {
+  static std::unique_ptr<T> Build(absl::Span<const absl::string_view> args) {
     if (!IsValid(T::kName, args)) return {};
     if (!args.empty()) return {};
     return std::unique_ptr<T>(new T());
   }
-  static std::string Usage(std::string_view argv0) {
+  static std::string Usage(absl::string_view argv0) {
     return absl::StrCat(argv0, " ", T::kName);
   }
   void Run(pa_context *const ctx) final {
@@ -440,18 +440,18 @@ class ToggleMuteSubcommand : public Subcommand, private Caster<T> {
 class ToggleSinkMuteSubcommand final
     : public ToggleMuteSubcommand<ToggleSinkMuteSubcommand, SinkTraits> {
  public:
-  static inline constexpr std::string_view kName = "toggle-sink-mute";
+  static inline constexpr absl::string_view kName = "toggle-sink-mute";
   using ToggleMuteSubcommand::ToggleMuteSubcommand;
 };
 class ToggleSourceMuteSubcommand final
     : public ToggleMuteSubcommand<ToggleSourceMuteSubcommand, SourceTraits> {
  public:
-  static inline constexpr std::string_view kName = "toggle-source-mute";
+  static inline constexpr absl::string_view kName = "toggle-source-mute";
   using ToggleMuteSubcommand::ToggleMuteSubcommand;
 };
 
 std::unique_ptr<Subcommand> Subcommand::Build(
-    const absl::Span<const std::string_view> args) {
+    const absl::Span<const absl::string_view> args) {
   if (auto cmd = GetSinkVolumeSubcommand::Build(args); cmd) return cmd;
   if (auto cmd = SetSinkVolumeSubcommand::Build(args); cmd) return cmd;
   if (auto cmd = IncrementSinkVolumeSubcommand::Build(args); cmd) return cmd;
@@ -469,7 +469,7 @@ std::unique_ptr<Subcommand> Subcommand::Build(
   return {};
 }
 
-std::string Subcommand::Usage(std::string_view argv0) {
+std::string Subcommand::Usage(absl::string_view argv0) {
   return absl::StrCat(
       "Usage:\n"
       "  ",
@@ -537,9 +537,9 @@ void HandleSignal(pa_mainloop_api *const m, pa_signal_event *, int, void *) {
   exit(0);
 }
 
-std::vector<std::string_view> Args(const int argc, char **const argv) {
+std::vector<absl::string_view> Args(const int argc, char **const argv) {
   if (!argv) return {};
-  std::vector<std::string_view> args;
+  std::vector<absl::string_view> args;
   args.reserve(argc);
   for (int i = 0; i < argc && argv[i]; i++) args.emplace_back(argv[i]);
   return args;
